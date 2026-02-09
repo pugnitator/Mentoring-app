@@ -17,6 +17,8 @@ WORKDIR /app
 COPY backend/package*.json ./
 RUN npm ci
 COPY backend/ ./
+# prisma generate только генерирует клиент; к БД не подключается, но требует DATABASE_URL в env
+ENV DATABASE_URL="postgresql://build:build@localhost:5432/build"
 RUN npx prisma generate
 RUN npm run build
 
