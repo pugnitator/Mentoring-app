@@ -1,0 +1,79 @@
+@import 'tailwindcss';
+
+/* Design tokens — DESIGN_REQUIREMENTS.md */
+:root {
+  --color-bg-page: #f8f9fb;
+  --color-surface: #ffffff;
+  --color-accent-start: #2ac9a8;
+  --color-accent-end: #18d19f;
+  --color-accent-secondary: #8b5cf6;
+  --color-accent-blue: #3b82f6;
+  --color-text-primary: #333333;
+  --color-text-secondary: #6b7280;
+  --color-text-muted: #9ca3af;
+  --color-border: #e5e7eb;
+  --color-success: #10b981;
+  --color-error: #ef4444;
+  --color-warning: #f59e0b;
+  --shadow-card: 0 4px 6px rgba(0, 0, 0, 0.05);
+  --radius-btn: 8px;
+  --radius-card: 8px;
+  --radius-modal: 12px;
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+[data-theme='dark'] {
+  --color-bg-page: #0f172a;
+  --color-surface: #1e293b;
+  --color-accent-start: #2dd4bf;
+  --color-accent-end: #34d399;
+  --color-accent-secondary: #a78bfa;
+  --color-accent-blue: #60a5fa;
+  --color-text-primary: #f8fafc;
+  --color-text-secondary: #cbd5e1;
+  --color-text-muted: #94a3b8;
+  --color-border: #334155;
+  --color-success: #34d399;
+  --color-error: #f87171;
+  --color-warning: #fbbf24;
+  --shadow-card: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: var(--font-sans);
+  line-height: 1.5;
+  font-weight: 400;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: var(--color-bg-page);
+  color: var(--color-text-primary);
+}
+
+#app {
+  min-height: 100vh;
+}
+
+/* Primary button gradient */
+.btn-primary-gradient {
+  background: linear-gradient(to right, var(--color-accent-start), var(--color-accent-end));
+  color: white;
+}
+.btn-primary-gradient:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+.btn-primary-gradient:focus-visible {
+  outline: 2px solid var(--color-accent-end);
+  outline-offset: 2px;
+}

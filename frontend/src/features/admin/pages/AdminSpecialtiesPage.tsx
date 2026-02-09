@@ -1,0 +1,238 @@
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { adminApi, type SpecialtyItem } from '../api/adminApi';
+import { getErrorMessage } from '../../../shared/lib/errorHandler';
+import { Button } from '../../../shared/ui/Button';
+import { Input } from '../../../shared/ui/Input';
+
+const key = ['admin', 'specialties'];
+
+export function AdminSpecialtiesPage() {
+  const queryClient = useQueryClient();
+  const { data: specialties, isLoading, isError } = useQuery({
+    queryKey: key,
+    queryFn: () => adminApi.getSpecialties(),
+  });
+  const createSpecialty = useMutation({
+    mutationFn: (data: { name: string; sortOrder?: number }) =>
+      adminApi.createSpecialty(data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: key }),
+  });
+  const updateSpecialty = useMutation({
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: { name?: string; sortOrder?: number };
+    }) => adminApi.updateSpecialty(id, data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: key }),
+  });
+  const deleteSpecialty = useMutation({
+    mutationFn: (id: string) => adminApi.deleteSpecialty(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: key }),
+  });
+
+  const [modal, setModal] = useState<{ item: SpecialtyItem | null } | null>(null);
+  const [name, setName] = useState('');
+  const [sortOrder, setSortOrder] = useState<string>('');
+  const [error, setError] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<SpecialtyItem | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const openCreate = () => {
+    setModal({ item: null });
+    setName('');
+    setSortOrder('');
+    setError(null);
+  };
+
+  const openEdit = (item: SpecialtyItem) => {
+    setModal({ item });
+    setName(item.name);
+    setSortOrder(item.sortOrder != null ? String(item.sortOrder) : '');
+    setError(null);
+  };
+
+  const closeModal = () => setModal(null);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    const nameTrim = name.trim();
+    if (!nameTrim) {
+      setError('Название не может быть пустым');
+      return;
+    }
+    const order = sortOrder.trim() === '' ? undefined : parseInt(sortOrder, 10);
+    if (sortOrder.trim() !== '' && (isNaN(order!) || order! < 0)) {
+      setError('Порядок должен быть неотрицательным числом');
+      return;
+    }
+    if (modal?.item) {
+      updateSpecialty.mutate(
+        { id: modal.item.id, data: { name: nameTrim, sortOrder: order } },
+        {
+          onSuccess: closeModal,
+          onError: (err) => setError(getErrorMessage(err)),
+        }
+      );
+    } else {
+      createSpecialty.mutate(
+        { name: nameTrim, sortOrder: order },
+        {
+          onSuccess: closeModal,
+          onError: (err) => setError(getErrorMessage(err)),
+        }
+      );
+    }
+  };
+
+  const handleDelete = (item: SpecialtyItem) => {
+    setDeleteConfirm(item);
+    setDeleteError(null);
+  };
+
+  const confirmDelete = () => {
+    if (!deleteConfirm) return;
+    deleteSpecialty.mutate(deleteConfirm.id, {
+      onSuccess: () => setDeleteConfirm(null),
+      onError: (err) => setDeleteError(getErrorMessage(err)),
+    });
+  };
+
+  if (isLoading) return <p className="text-gray-500 dark:text-gray-400">Загрузка...</p>;
+  if (isError) return <p className="text-red-600 dark:text-red-400">Не удалось загрузить специальности</p>;
+
+  return (
+    <div>
+      <h1 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">
+        Специальности
+      </h1>
+      <div className="mb-4">
+        <Button onClick={openCreate}>Добавить</Button>
+      </div>
+      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+        <table className="w-full text-left text-sm">
+          <thead>
+            <tr className="border-b border-gray-200 dark:border-gray-700">
+              <th className="p-3 font-medium text-gray-900 dark:text-gray-100">Название</th>
+              <th className="p-3 font-medium text-gray-900 dark:text-gray-100">Порядок</th>
+              <th className="p-3 font-medium text-gray-900 dark:text-gray-100">Действия</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(specialties ?? []).map((item) => (
+              <tr key={item.id} className="border-b border-gray-100 dark:border-gray-700">
+                <td className="p-3 text-gray-900 dark:text-gray-100">{item.name}</td>
+                <td className="p-3 text-gray-600 dark:text-gray-400">
+                  {item.sortOrder ?? '—'}
+                </td>
+                <td className="p-3">
+                  <button
+                    type="button"
+                    onClick={() => openEdit(item)}
+                    className="mr-2 text-indigo-600 hover:underline dark:text-indigo-400"
+                  >
+                    Изменить
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(item)}
+                    className="text-red-600 hover:underline dark:text-red-400"
+                  >
+                    Удалить
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {modal && (
+        <div
+          className="fixed inset-0 z-10 flex items-center justify-center bg-black/50 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="specialty-modal-title"
+        >
+          <div className="w-full max-w-md rounded-xl bg-white p-6 dark:bg-gray-800">
+            <h2 id="specialty-modal-title" className="mb-4 text-lg font-semibold">
+              {modal.item ? 'Редактировать специальность' : 'Новая специальность'}
+            </h2>
+            <form onSubmit={handleSubmit}>
+              <Input
+                label="Название"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                autoFocus
+              />
+              <div className="mt-3">
+                <Input
+                  label="Порядок (число)"
+                  type="number"
+                  min={0}
+                  value={sortOrder}
+                  onChange={(e) => setSortOrder(e.target.value)}
+                />
+              </div>
+              {error && (
+                <p className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
+                  {error}
+                </p>
+              )}
+              <div className="mt-4 flex gap-2">
+                <Button
+                  type="submit"
+                  disabled={createSpecialty.isPending || updateSpecialty.isPending}
+                >
+                  {modal.item ? 'Сохранить' : 'Создать'}
+                </Button>
+                <Button type="button" variant="secondary" onClick={closeModal}>
+                  Отмена
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {deleteConfirm && (
+        <div
+          className="fixed inset-0 z-10 flex items-center justify-center bg-black/50 p-4"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="w-full max-w-sm rounded-xl bg-white p-6 dark:bg-gray-800">
+            <p className="mb-2">Удалить специальность «{deleteConfirm.name}»?</p>
+            {deleteError && (
+              <p className="mb-2 text-sm text-red-600 dark:text-red-400" role="alert">
+                {deleteError}
+              </p>
+            )}
+            <div className="flex gap-2">
+              <Button
+                variant="danger"
+                onClick={confirmDelete}
+                disabled={deleteSpecialty.isPending}
+              >
+                Удалить
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setDeleteConfirm(null);
+                  setDeleteError(null);
+                }}
+              >
+                Отмена
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

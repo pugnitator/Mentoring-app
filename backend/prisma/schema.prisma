@@ -1,0 +1,182 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum ProfileLevel {
+  JUNIOR
+  MIDDLE
+  SENIOR
+  LEAD
+}
+
+enum SearchStatus {
+  SEARCHING
+  NOT_SEARCHING
+}
+
+enum RequestStatus {
+  SENT
+  ACCEPTED
+  REJECTED
+  COMPLETED
+}
+
+enum ConnectionStatus {
+  ACTIVE
+  DETACHED
+}
+
+model Specialty {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  sortOrder Int?
+  createdAt DateTime @default(now())
+}
+
+model User {
+  id                   String               @id @default(uuid())
+  email                String               @unique
+  passwordHash         String
+  role                 UserRole             @default(USER)
+  status               UserStatus           @default(ACTIVE)
+  telegramId           BigInt?              @unique
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  profile              Profile?
+  notificationSettings NotificationSettings?
+}
+
+model NotificationSettings {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emailEnabled    Boolean  @default(true)
+  telegramChatId  String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Profile {
+  id         String   @id @default(uuid())
+  userId     String   @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  firstName  String
+  lastName   String
+  middleName String?
+  specialty  String
+  level      ProfileLevel?
+  bio        String?
+  city       String?
+  avatarUrl  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  mentor     Mentor?
+  mentee     Mentee?
+}
+
+model Tag {
+  id          String       @id @default(uuid())
+  name        String       @unique
+  description String?
+  createdAt   DateTime     @default(now())
+  mentorTags  MentorTag[]
+}
+
+model MentorTag {
+  mentorId String
+  tagId    String
+  mentor   Mentor @relation(fields: [mentorId], references: [id], onDelete: Cascade)
+  tag      Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  @@id([mentorId, tagId])
+}
+
+model Mentor {
+  id                    String       @id @default(uuid())
+  profileId             String       @unique
+  profile               Profile      @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  description           String
+  workFormat            String
+  acceptsRequests       Boolean
+  statusComment         String?
+  maxMentees            Int
+  specializationTopics String[]
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+  mentorTags            MentorTag[]
+  favorites             Favorite[]
+  requests              Request[]
+  connections           Connection[]
+}
+
+model Mentee {
+  id              String       @id @default(uuid())
+  profileId       String       @unique
+  profile         Profile      @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  goal            String
+  desiredPosition String?
+  searchStatus    SearchStatus
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  favorites       Favorite[]
+  requests        Request[]
+  connections     Connection[]
+}
+
+model Favorite {
+  id        String   @id @default(uuid())
+  menteeId  String
+  mentorId  String
+  createdAt DateTime @default(now())
+  mentee    Mentee   @relation(fields: [menteeId], references: [id], onDelete: Cascade)
+  mentor    Mentor   @relation(fields: [mentorId], references: [id], onDelete: Cascade)
+
+  @@unique([menteeId, mentorId])
+}
+
+model Request {
+  id        String        @id @default(uuid())
+  menteeId  String
+  mentorId  String
+  message   String
+  status    RequestStatus
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  mentee    Mentee         @relation(fields: [menteeId], references: [id], onDelete: Cascade)
+  mentor    Mentor         @relation(fields: [mentorId], references: [id], onDelete: Cascade)
+  connection Connection?
+}
+
+model Connection {
+  id          String           @id @default(uuid())
+  mentorId    String
+  menteeId    String
+  requestId   String           @unique
+  status      ConnectionStatus
+  createdAt   DateTime         @default(now())
+  completedAt DateTime?
+  detachedAt  DateTime?
+  reason      String?
+  mentor      Mentor           @relation(fields: [mentorId], references: [id], onDelete: Cascade)
+  mentee      Mentee           @relation(fields: [menteeId], references: [id], onDelete: Cascade)
+  request     Request          @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@unique([mentorId, menteeId])
+}

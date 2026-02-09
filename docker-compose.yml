@@ -1,0 +1,63 @@
+# Mentoring App — локальный запуск (dev/demo).
+# Из корня репозитория: cp backend/.env.example backend/.env, cp frontend/.env.example frontend/.env, docker-compose up -d
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: mentoring-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: mentoring
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d mentoring"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    container_name: mentoring-backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/mentoring?schema=public"
+      PORT: "3000"
+      FRONTEND_URL: "http://localhost:5173"
+      JWT_SECRET: "${JWT_SECRET:-dev-jwt-secret-change-me}"
+      JWT_REFRESH_SECRET: "${JWT_REFRESH_SECRET:-dev-refresh-secret-change-me}"
+      JWT_EXPIRES_IN: "15m"
+      JWT_REFRESH_EXPIRES_IN: "7d"
+    env_file:
+      - backend/.env
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    container_name: mentoring-frontend
+    restart: unless-stopped
+    environment:
+      BACKEND_URL: "http://backend:3000"
+    env_file:
+      - frontend/.env
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+    driver: local

@@ -1,0 +1,13 @@
+# Исключаем из контекста сборки Docker
+git
+.github
+node_modules
+**/node_modules
+**/dist
+**/.env
+*.md
+plans
+.git
+.gitignore
+.env
+*.log
