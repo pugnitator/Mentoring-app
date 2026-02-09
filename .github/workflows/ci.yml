@@ -65,3 +65,6 @@ jobs:
       - name: Build frontend image
         run: |
           docker build -f docker/Dockerfile.frontend -t mentoring-frontend:ci .
+      - name: Build full image (backend + frontend)
+        run: |
+          docker build -f docker/Dockerfile.full -t mentoring-full:ci .

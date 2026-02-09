@@ -141,4 +141,46 @@ ngrok http 5173
 
 ---
 
-Итог: для быстрого старта достаточно скопировать `.env.example` в `.env` для backend и frontend, выполнить `docker-compose up -d` и открыть http://localhost:5173. Для внешнего доступа — поднять ngrok на 5173 и при необходимости настроить Telegram и CORS по этому документу.
+## 7. Деплой на Render
+
+### Как устроено
+
+- **Проект (Project)** в Render — это просто папка/группировка. Внутри проекта вы добавляете **сервисы**.
+- **PostgreSQL** — это уже один сервис: Render его поднимает и даёт URL для подключения. Данные хранятся у Render, ничего «заливать» в БД вручную не нужно.
+- **Backend** и **Frontend** — это отдельные сервисы. Код вы не загружаете вручную: вы добавляете сервис типа **Web Service** (backend) или **Static Site** (frontend), подключаете **репозиторий из Git**. При каждом деплое Render сам клонирует код из Git, собирает и запускает его.
+
+### Как приложение взаимодействует с БД
+
+БД уже работает на серверах Render по вашему External URL. Backend (ваш NestJS) подключается к ней по сети: в настройках Web Service вы задаёте переменную окружения **DATABASE_URL** — тот самый URL, который Render показал для PostgreSQL. Prisma при старте использует этот URL и выполняет миграции (`prisma migrate deploy`), затем приложение ходит в БД по этому же URL. То есть вы только прописываете ссылку на БД в настройках сервиса — отдельно «подключать» или заливать что-то в БД не нужно.
+
+### Вариант А: один образ (рекомендуется)
+
+Один сервис отдаёт и API, и фронт с одного URL (например `https://mentoring-app.onrender.com` и `https://mentoring-app.onrender.com/api`).
+
+1. В проекте на Render: **Add Service** → **Web Service**, подключить репозиторий из Git.  
+2. **Environment:** выбрать **Docker** (не Node).  
+3. **Dockerfile Path:** `docker/Dockerfile.full`. **Root Directory** оставить пустым (сборка из корня репо).  
+4. **Environment Variables:**  
+   - `DATABASE_URL` — External URL вашей PostgreSQL;  
+   - `JWT_SECRET`, `JWT_REFRESH_SECRET` — свои длинные строки;  
+   - `FRONTEND_URL` — тот же URL, что и у сервиса (например `https://mentoring-app.onrender.com`), для CORS.  
+5. Создать сервис. Render соберёт образ (frontend + backend в одном контейнере), при старте применятся миграции и поднимется приложение. Один URL — сайт и API.
+
+Отдельный Static Site не нужен.
+
+### Вариант Б: два сервиса (backend + Static Site)
+
+**Backend (Web Service, Node)**  
+1. **Add Service** → **Web Service**, репозиторий из Git.  
+2. **Root Directory:** `backend`. **Build Command:** `npm ci && npx prisma generate && npm run build`. **Start Command:** `npx prisma migrate deploy && node dist/main.js`.  
+3. **Environment:** `DATABASE_URL`, `JWT_SECRET`, `JWT_REFRESH_SECRET`, `FRONTEND_URL` (URL фронта — указать после шага 5).
+
+**Frontend (Static Site)**  
+4. **Add Service** → **Static Site**, тот же репозиторий. **Root Directory:** `frontend`. **Build Command:** `npm ci && npm run build`. **Publish Directory:** `dist`.  
+5. **Environment:** `VITE_API_URL` = `https://<URL-backend-сервиса>/api`. В настройках backend задать `FRONTEND_URL` = URL этого статического сайта.
+
+После этого при пушах в Git Render по желанию может автоматически пересобирать и перезапускать сервисы — код и БД связаны только через DATABASE_URL в настройках.
+
+---
+
+Итог: для быстрого старта достаточно скопировать `.env.example` в `.env` для backend и frontend, выполнить `docker-compose up -d` и открыть http://localhost:5173. Для внешнего доступа — поднять ngrok на 5173; для постоянного хостинга — Render (раздел 7).
