@@ -35,8 +35,8 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
-  // В одном образе (Docker): раздаём собранный фронт из ./client, SPA fallback
-  const clientPath = join(__dirname, '..', 'client');
+  // В одном образе (Docker): раздаём собранный фронт из ./client, SPA fallback (при node dist/src/main.js -> __dirname = .../dist/src)
+  const clientPath = join(__dirname, '..', '..', 'client');
   if (existsSync(clientPath)) {
     const expressApp = app.getHttpAdapter().getInstance();
     expressApp.use(express.static(clientPath));
