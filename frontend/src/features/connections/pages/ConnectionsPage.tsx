@@ -38,7 +38,6 @@ export function ConnectionsPage() {
   const [modalError, setModalError] = useState<string | null>(null);
 
   const allConnections = connections ?? [];
-  const activeNotCompleted = allConnections.filter((c) => c.status === 'ACTIVE' && !c.completedAt);
 
   const handleOpenDetach = (connection: ConnectionItem) => {
     setDetachModal({ connection });

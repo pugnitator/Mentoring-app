@@ -104,7 +104,7 @@ export function HomePage() {
   const isMentee = !!profile?.mentee;
   const hasRole = isMentor || isMentee;
 
-  const { data: dashboard, isLoading: dashboardLoading, isError: dashboardError } = useDashboard(hasRole && !isAdmin);
+  const { data: dashboard, isLoading: dashboardLoading } = useDashboard(hasRole && !isAdmin);
   const acceptRequest = useAcceptRequest();
   const rejectRequest = useRejectRequest();
   const completeConnection = useCompleteConnection();
