@@ -40,8 +40,9 @@ async function bootstrap() {
   if (existsSync(clientPath)) {
     const expressApp = app.getHttpAdapter().getInstance();
     expressApp.use(express.static(clientPath));
-    expressApp.get('*', (req: { path: string }, res: { sendFile: (p: string) => void }, next: () => void) => {
-      if (req.path.startsWith('/api')) return next();
+    // SPA fallback: middleware вместо маршрута '*' (path-to-regexp больше не принимает '*')
+    expressApp.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
+      if (req.method !== 'GET' || req.path.startsWith('/api')) return next();
       res.sendFile(join(clientPath, 'index.html'));
     });
   }
