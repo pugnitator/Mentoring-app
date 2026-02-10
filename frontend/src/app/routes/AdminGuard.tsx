@@ -11,8 +11,8 @@ export function AdminGuard({ children }: AdminGuardProps) {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <p className="text-gray-600 dark:text-gray-400">Загрузка...</p>
+      <div className="flex min-h-screen items-center justify-center">
+        <p style={{ color: 'var(--color-text-secondary)' }}>Загрузка...</p>
       </div>
     );
   }

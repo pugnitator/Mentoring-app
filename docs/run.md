@@ -181,6 +181,55 @@ ngrok http 5173
 
 После этого при пушах в Git Render по желанию может автоматически пересобирать и перезапускать сервисы — код и БД связаны только через DATABASE_URL в настройках.
 
+### Работа с БД и первый админ
+
+- **Как работает БД:** Все данные (пользователи, профили, заявки и т.д.) хранятся в одной PostgreSQL на Render. Приложение при старте подключается по `DATABASE_URL` и при деплое выполняет только миграции (`prisma migrate deploy`) — схема таблиц обновляется, данные не трогаются. Регистрация, логин и админка работают с этой же БД.
+
+- **Как завести админа:** В проекте есть seed-скрипт, который создаёт админа и демо-данные (теги, специальности, демо-менторы). На Render seed при деплое **не запускается**. Чтобы один раз завести админа и при желании демо-данные:
+  1. Скопируйте **External Database URL** из вашего PostgreSQL-сервиса на Render.
+  2. Локально в корне репозитория выполните (подставьте свой URL):
+     ```bash
+     cd backend
+     set DATABASE_URL=postgresql://...ваш_External_URL...
+     npx prisma db seed
+     ```
+     (В PowerShell: `$env:DATABASE_URL="postgresql://..."; npx prisma db seed`. В bash: `DATABASE_URL="postgresql://..." npx prisma db seed`.)
+  3. Seed создаст пользователя **admin@example.com** с паролем **admin123** (и при отсутствии — теги, специальности, 10 демо-менторов). После первого входа в админку пароль лучше сменить (если в приложении есть смена пароля) или поменять в БД.
+
+Если админ уже есть (по email), seed не создаёт второго. Для ещё одного админа можно либо вручную обновить поле `role` в таблице `User` в БД на `ADMIN`, либо добавить в seed другой email и перезапустить seed (осторожно: seed также создаёт демо-менторов при нехватке).
+
+- **Перенос данных из локальной БД на Render (миграция данных):** Если в локальной PostgreSQL уже есть нужные данные (пользователи, профили, теги и т.д.) и вы хотите перенести их в БД на Render, используйте стандартный дамп и восстановление PostgreSQL.
+
+  1. **Дамп с локальной БД** (схема + данные). В терминале, когда локальная PostgreSQL доступна (например, после `docker-compose up -d`):
+     ```bash
+     pg_dump "postgresql://postgres:postgres@localhost:5432/mentoring?schema=public" --no-owner --no-acl -f dump.sql
+     ```
+     Файл `dump.sql` будет в текущей папке.
+
+  2. **Восстановление в БД на Render.** Подставьте **External Database URL** из Render (логин, пароль, хост, имя БД должны совпадать с форматом URL):
+     ```bash
+     psql "postgresql://user:password@host.render.com/dbname?sslmode=require" -f dump.sql
+     ```
+     У Render в URL часто уже есть параметры вроде `?sslmode=require` — оставьте их. Если `psql` ругается на SSL, добавьте `?sslmode=require` в конец URL.
+
+  Внимание: на Render уже применены миграции (таблицы созданы). Дамп из шага 1 содержит `CREATE TABLE` и т.д. — при восстановлении могут быть ошибки «table already exists». Тогда делайте дамп **только данных** (без схемы):
+  ```bash
+  pg_dump "postgresql://postgres:postgres@localhost:5432/mentoring?schema=public" --no-owner --no-acl --data-only -f dump_data.sql
+  psql "postgresql://...Render_URL...?sslmode=require" -f dump_data.sql
+  ```
+  Порядок вставки может потребовать отключения внешних ключей или правильного порядка таблиц; при конфликтах смотрите сообщения `psql` и при необходимости выгружайте по таблицам или используйте `--disable-triggers` (осторожно на проде).
+
+  **Альтернатива: скрипт на Node** (не нужен pg_dump/psql). В проекте есть `backend/prisma/migrate-data-to-render.mjs`: он копирует все данные из одной БД в другую (сначала очищает целевые таблицы на Render, затем вставляет из локальной БД). Запуск:
+  1. Поднять локальную БД: `docker-compose up -d` (из корня репо).
+  2. Из папки `backend` выполнить (подставьте свой Render External URL):
+     ```bash
+     set SOURCE_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/mentoring
+     set TARGET_DATABASE_URL=postgresql://user:password@host.oregon-postgres.render.com/dbname?sslmode=require
+     node prisma/migrate-data-to-render.mjs
+     ```
+     (PowerShell: `$env:SOURCE_DATABASE_URL="..."; $env:TARGET_DATABASE_URL="..."; node prisma/migrate-data-to-render.mjs`.)
+  Скрипт выведет количество скопированных строк по таблицам. Данные на Render будут полностью заменены данными из локальной БД.
+
 ---
 
 Итог: для быстрого старта достаточно скопировать `.env.example` в `.env` для backend и frontend, выполнить `docker-compose up -d` и открыть http://localhost:5173. Для внешнего доступа — поднять ngrok на 5173; для постоянного хостинга — Render (раздел 7).
