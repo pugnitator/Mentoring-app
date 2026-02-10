@@ -7,17 +7,23 @@ interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
 }
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ label, error, required, id, className = '', ...props }, ref) => {
+  ({ label, error, required, id, className = '', style, ...props }, ref) => {
     const textareaId = id || props.name;
     return (
       <div className="w-full">
         {label && (
           <label
             htmlFor={textareaId}
-            className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300"
+            className="mb-1 block text-sm font-medium"
+            style={{ color: 'var(--color-text-secondary)' }}
           >
             {label}
-            {required && <span className="text-red-500" aria-hidden="true"> *</span>}
+            {required && (
+              <span style={{ color: 'var(--color-error)' }} aria-hidden="true">
+                {' '}
+                *
+              </span>
+            )}
           </label>
         )}
         <textarea
@@ -25,17 +31,21 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           id={textareaId}
           required={required}
           className={`
-            w-full rounded-lg border px-3 py-2 text-gray-900 placeholder-gray-500
-            focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500
-            dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400
+            w-full min-h-[80px] rounded-[var(--radius-btn)] border px-3 py-2
+            focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-end)] focus:ring-offset-0
             disabled:cursor-not-allowed disabled:opacity-50
-            ${error ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300'}
             ${className}
           `}
+          style={{
+            backgroundColor: 'var(--color-surface)',
+            borderColor: error ? 'var(--color-error)' : 'var(--color-border)',
+            color: 'var(--color-text-primary)',
+            ...style,
+          }}
           {...props}
         />
         {error && (
-          <p className="mt-1 text-sm text-red-600 dark:text-red-400" role="alert">
+          <p className="mt-1 text-sm" style={{ color: 'var(--color-error)' }} role="alert">
             {error}
           </p>
         )}

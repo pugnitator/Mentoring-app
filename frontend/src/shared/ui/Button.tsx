@@ -14,9 +14,8 @@ const variantClasses: Record<Variant, string> = {
   primary:
     'btn-primary-gradient border-0 shadow-[var(--shadow-card)] hover:scale-[1.02] transition-transform duration-150 ease-out',
   secondary:
-    'bg-transparent border-2 border-[var(--color-accent-blue)] text-[var(--color-accent-blue)] hover:bg-[var(--color-accent-blue)]/10 focus:ring-[var(--color-accent-blue)] dark:border-[var(--color-accent-blue)] dark:text-[var(--color-accent-blue)]',
-  danger:
-    'bg-[var(--color-error)] text-white border-0 hover:opacity-90 focus:ring-[var(--color-error)] dark:bg-[var(--color-error)]',
+    'bg-transparent border-2 text-[var(--color-accent-blue)] hover:bg-[var(--color-accent-blue)]/10 focus:ring-[var(--color-accent-blue)]',
+  danger: 'bg-[var(--color-error)] text-white border-0 hover:opacity-90 focus:ring-[var(--color-error)]',
 };
 
 const sizeClasses: Record<Size, string> = {
