@@ -10,6 +10,7 @@ import { getErrorMessage } from '../../../shared/lib/errorHandler';
 import { useSpecialties } from '../../profile/hooks/useSpecialties';
 import { Chip } from '../../../shared/ui/Chip';
 import { LoadingSpinner } from '../../../shared/ui/LoadingSpinner';
+import { Card } from '../../../shared/ui/Card';
 import type { MentorCatalogItem } from '../../../shared/types/mentors';
 
 const LIMIT = 12;
@@ -55,22 +56,24 @@ function MentorCard({
   const isLoading = addFavoriteLoading || removeFavoriteLoading;
 
   return (
-    <article className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+    <Card className="border border-[var(--color-border)] p-4">
       <div className="mb-2 flex items-start justify-between gap-2">
-        <h3 className="font-semibold text-gray-900 dark:text-gray-100">
+        <h3 className="font-semibold" style={{ color: 'var(--color-text-primary)' }}>
           {item.firstName} {item.lastName}
         </h3>
-        <span className="text-xs text-gray-500 dark:text-gray-400">
+        <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
           {formatDate(item.createdAt)}
         </span>
       </div>
-      <p className="mb-2 text-sm text-gray-600 dark:text-gray-300">{item.specialty}</p>
+      <p className="mb-2 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+        {item.specialty}
+      </p>
       {showFavoriteAndRequest && item.favoritesCount > 0 && !isInFavorites && (
-        <p className="mb-1 text-xs text-gray-500 dark:text-gray-400">
+        <p className="mb-1 text-xs" style={{ color: 'var(--color-text-muted)' }}>
           В избранном: {item.favoritesCount}
         </p>
       )}
-      <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">
+      <p className="mb-2 text-xs" style={{ color: 'var(--color-text-muted)' }}>
         {item.acceptsRequests ? 'Принимает заявки' : 'Не принимает заявки'}
       </p>
       {item.tags.length > 0 && (
@@ -86,7 +89,9 @@ function MentorCard({
         </div>
       )}
       {showFavoriteAndRequest && favoriteError && (
-        <p className="mb-2 text-xs text-red-600 dark:text-red-400">{favoriteError}</p>
+        <p className="mb-2 text-xs" style={{ color: 'var(--color-error)' }}>
+          {favoriteError}
+        </p>
       )}
       <div className="flex flex-wrap gap-2">
         {showFavoriteAndRequest &&
@@ -109,7 +114,12 @@ function MentorCard({
                 type="button"
                 onClick={() => onAddFavorite(item.id)}
                 disabled={isLoading}
-                className="inline-flex min-w-[8.5rem] items-center justify-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                className="inline-flex min-w-[8.5rem] items-center justify-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm disabled:opacity-50"
+                style={{
+                  borderColor: 'var(--color-border)',
+                  color: 'var(--color-text-secondary)',
+                  backgroundColor: 'transparent',
+                }}
                 title="Добавить в избранное"
               >
                 {addFavoriteLoading && (
@@ -120,7 +130,11 @@ function MentorCard({
             )
           ) : (
             <span
-              className="cursor-not-allowed rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-400 dark:border-gray-600 dark:text-gray-500"
+              className="cursor-not-allowed rounded-lg border px-3 py-1.5 text-sm"
+              style={{
+                borderColor: 'var(--color-border)',
+                color: 'var(--color-text-muted)',
+              }}
               title={isAuthenticated() ? 'Доступно только для менти' : 'Войдите, чтобы добавлять в избранное'}
             >
               В избранное
@@ -152,7 +166,7 @@ function MentorCard({
             )
           ))}
       </div>
-    </article>
+    </Card>
   );
 }
 
@@ -244,13 +258,13 @@ export function MentorsCatalogPage() {
         Каталог менторов
       </h1>
 
-        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-          <h2 className="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+        <Card className="mb-6 border border-[var(--color-border)] p-4">
+          <h2 className="mb-3 text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>
             Фильтры
           </h2>
           <div className="flex flex-wrap gap-6">
             <div>
-              <label className="mb-1 block text-xs text-gray-500 dark:text-gray-400">
+              <label className="mb-1 block text-xs" style={{ color: 'var(--color-text-muted)' }}>
                 Специальность
               </label>
               <select
@@ -259,7 +273,12 @@ export function MentorsCatalogPage() {
                   setSpecialty(e.target.value);
                   setPage(1);
                 }}
-                className="rounded-lg border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                className="rounded-[var(--radius-btn)] border px-3 py-2"
+                style={{
+                  backgroundColor: 'var(--color-surface)',
+                  borderColor: 'var(--color-border)',
+                  color: 'var(--color-text-primary)',
+                }}
               >
                 <option value="">Все</option>
                 {specialties.map((s) => (
@@ -301,18 +320,20 @@ export function MentorsCatalogPage() {
                   }}
                   className="rounded border-gray-300 text-indigo-600"
                 />
-                <span className="text-sm text-gray-700 dark:text-gray-300">
+                <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
                   Только принимающие заявки
                 </span>
               </label>
             </div>
           </div>
-        </div>
+        </Card>
 
         {isLoading ? (
           <LoadingSpinner className="py-16" label="Загрузка каталога..." />
         ) : catalog && catalog.items.length === 0 ? (
-          <p className="text-gray-500 dark:text-gray-400">Менторы не найдены</p>
+          <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
+            Менторы не найдены
+          </p>
         ) : catalog ? (
           <>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
